@@ -76,6 +76,10 @@ setattr(__main__, "ResNet", ResNet)
 model = torch.load("model_resnet50.pt", map_location=torch.device('cpu'))
 
 
+@app.get("/")
+async def root():
+    return {"message": "Hello World"}
+
 @app.post("/predict")
 async def predict(file: UploadFile):
     contents = await file.read()
@@ -91,4 +95,48 @@ async def predict(file: UploadFile):
     # Retrieve the class label
     predicted_label = classes[preds[0].item()]
     return {"class": predicted_label}
+
+
+
+@app.post("/encode_base64")
+async def process_image(request: ImageRequest):
+    # Decode the base64-encoded image data
+    encoded_image = request.image
+    binary_image = base64.b64decode(encoded_image)
+
+    # Load the image data into a PyTorch tensor
+    image_bytes = io.BytesIO(binary_image)
+    image = transforms.ToTensor()(PIL.Image.open(image_bytes))
+
+    # Do something with the PyTorch tensor
+    # ...
+
+    # Return a response
+    return {"message": "Image processed successfully"}
+
+
+@app.post("/encode_predict")
+async def process_image(request: ImageRequest):
+    # Decode the base64-encoded image data
+    encoded_image = request.image
+    binary_image = base64.b64decode(encoded_image)
+
+    # Load the image data into a PyTorch tensor
+    image_bytes = io.BytesIO(binary_image)
+    image = transforms.ToTensor()(PIL.Image.open(image_bytes))
+
+    device = get_default_device()
+    img_tensor = data_transforms(image)
+    # Convert to a batch of 1
+    xb = to_device(img_tensor.unsqueeze(0), device)
+    # Get predictions from model
+    yb = model(xb)
+    # Pick index with highest probability
+    prob, preds  = torch.max(yb, dim=1)
+    # Retrieve the class label
+    predicted_label = classes[preds[0].item()]
+    return {"class": predicted_label}
+
+
+
 
