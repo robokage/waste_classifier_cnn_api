@@ -8,6 +8,9 @@ from PIL import Image
 import io
 import os
 import __main__
+import io
+import base64
+from pydantic import BaseModel
 
 def data_transforms(img):
     transformations = transforms.Compose([transforms.Resize((227, 227)), transforms.ToTensor()])
@@ -97,6 +100,10 @@ async def predict(file: UploadFile):
     return {"class": predicted_label}
 
 
+
+
+class ImageRequest(BaseModel):
+    image: str
 
 @app.post("/encode_base64")
 async def process_image(request: ImageRequest):
